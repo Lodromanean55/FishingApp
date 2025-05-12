@@ -10,6 +10,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*", // ← allow any origin
+        allowedHeaders = "*",
+        methods = { RequestMethod.GET,
+                RequestMethod.POST,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.OPTIONS })
 public class AuthController {
 
     private final AuthService authService;
@@ -22,6 +29,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         User saved = authService.registerUserWithValidation(user);
+        // nu returna tot userul, doar dto
         // Poți să returnezi un DTO fără password, sau pur și simplu:
         return ResponseEntity.ok(saved);
     }

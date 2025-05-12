@@ -20,4 +20,11 @@ public class ErrorHandler {
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(FishingLocationValidationException.class)
+    public ResponseEntity<?> handleResourceNotFoundException(FishingLocationValidationException ex, WebRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }

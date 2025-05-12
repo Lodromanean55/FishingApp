@@ -1,28 +1,49 @@
 package com.fishing.demo.controller;
 
-import com.fishing.demo.model.FishingLocation;
+import com.fishing.demo.model.FishingLocationRequestDTO;
+import com.fishing.demo.model.FishingLocationResponseDTO;
 import com.fishing.demo.service.FishingLocationService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/locations")
 @AllArgsConstructor
 public class FishingLocationController {
 
-    FishingLocationService fishingLocationService;
+    private final FishingLocationService service;
 
-    @GetMapping("/locations")
-    public List<FishingLocation> getFishingLocation() {
-        return fishingLocationService.getAll();
+    @GetMapping
+    public List<FishingLocationResponseDTO> listAll() {
+        return service.getAllLocations();
     }
 
-    @PostMapping("/create")
-    public void createFishingLocation(Authentication auth,
-                                      @RequestBody FishingLocation fishingLocation) {
-        fishingLocationService.createFishingLocation(auth, fishingLocation);
+    @GetMapping("/{id}")
+    public FishingLocationResponseDTO getById(@PathVariable Long id) {
+        return service.getLocationById(id);
+    }
+
+    @PostMapping
+    public FishingLocationResponseDTO create(@Valid @RequestBody FishingLocationRequestDTO dto,
+                                             Authentication auth) {
+        return service.createLocation(auth, dto);
+    }
+
+    @PutMapping("/{id}")
+    public FishingLocationResponseDTO update(@PathVariable Long id,
+                                             @Valid @RequestBody FishingLocationRequestDTO dto,
+                                             Authentication auth) {
+        return service.updateLocation(id, auth, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id, Authentication auth) {
+        service.deleteLocation(id, auth);
     }
 }
