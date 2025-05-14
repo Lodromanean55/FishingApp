@@ -24,6 +24,9 @@ public class FishingLocationResponseDTO {
     private LocalDateTime updatedAt;
 
     // --- noile câmpuri ---
+    /** căile relative către imaginile încărcate */
+    private List<String> imagePaths;
+
     private List<LocalizationDTO> localizations;
     private List<String> facilities;
     private List<String> species;

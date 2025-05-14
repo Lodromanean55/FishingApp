@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -45,5 +46,15 @@ public class FishingLocationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id, Authentication auth) {
         service.deleteLocation(id, auth);
+    }
+
+    // ——— nou: upload imagini ———
+    @PostMapping(value = "/{id}/images", consumes = "multipart/form-data")
+    public FishingLocationResponseDTO uploadImages(
+            @PathVariable Long id,
+            @RequestPart("files") List<MultipartFile> files,
+            Authentication auth
+    ) {
+        return service.uploadImages(id, auth, files);
     }
 }

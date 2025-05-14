@@ -57,6 +57,7 @@ public class SecurityConfig {
                 )
                 // Reguli de acces
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/uploads/**").permitAll()
                         // Preflight CORS (OPTIONS) pentru toate endpoint-urile API
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
 

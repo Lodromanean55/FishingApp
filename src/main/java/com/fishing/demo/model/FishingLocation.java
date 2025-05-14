@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -39,14 +40,17 @@ public class FishingLocation {
     @Column(nullable = false)
     private BigDecimal pricePerPerson;
 
-    // --- noile câmpuri ---
+    // --- stocăm căile relative către fișierele încărcate ---
+    @ElementCollection
+    @CollectionTable(name = "location_images", joinColumns = @JoinColumn(name = "location_id"))
+    @Column(name = "image_path", nullable = false)
+    private List<String> imagePaths = new ArrayList<>();
 
-    // Localizări: oraș, distanță și durată
+    // --- celelalte câmpuri existente ---
     @ElementCollection
     @CollectionTable(name = "location_localizations", joinColumns = @JoinColumn(name = "location_id"))
     private List<Localization> localizations;
 
-    // Facilități și specii de pești
     @ElementCollection
     @CollectionTable(name = "location_facilities", joinColumns = @JoinColumn(name = "location_id"))
     @Column(name = "facility")
@@ -57,11 +61,9 @@ public class FishingLocation {
     @Column(name = "species")
     private List<String> species;
 
-    // Număr de standuri și închiriere echipament
     private int numberOfStands;
     private boolean equipmentRental;
 
-    // --- restul existent ---
     @ManyToOne(optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

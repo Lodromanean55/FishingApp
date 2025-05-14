@@ -8,9 +8,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,10 +20,14 @@ public class FishingLocationService {
 
     private final FishingLocationRepository repo;
     private final UserRepository userRepo;
+    private final FileStorageService fileStorage;  // nou, pentru upload de imagini
 
-    public FishingLocationService(FishingLocationRepository repo, UserRepository userRepo) {
+    public FishingLocationService(FishingLocationRepository repo,
+                                  UserRepository userRepo,
+                                  FileStorageService fileStorage) {
         this.repo = repo;
         this.userRepo = userRepo;
+        this.fileStorage = fileStorage;
     }
 
     public FishingLocationResponseDTO createLocation(Authentication auth, FishingLocationRequestDTO dto) {
@@ -38,32 +44,31 @@ public class FishingLocationService {
         loc.setRules(dto.getRules());
         loc.setPricePerPerson(dto.getPricePerPerson());
 
-        // ─────────── Maparea câmpurilor noi ───────────
-        loc.setLocalizations(
-                dto.getLocalizations().stream()
-                        .map(d -> {
-                            Localization l = new Localization();
-                            l.setCity(d.getCity());
-                            l.setDistanceKm(d.getDistanceKm());
-                            l.setDuration(d.getDuration());
-                            return l;
-                        })
-                        .collect(Collectors.toList())
+        // mapăm noile câmpuri
+        loc.setLocalizations(dto.getLocalizations().stream()
+                .map(d -> {
+                    Localization l = new Localization();
+                    l.setCity(d.getCity());
+                    l.setDistanceKm(d.getDistanceKm());
+                    l.setDuration(d.getDuration());
+                    return l;
+                })
+                .collect(Collectors.toList())
         );
         loc.setFacilities(dto.getFacilities());
         loc.setSpecies(dto.getSpecies());
         loc.setNumberOfStands(dto.getNumberOfStands());
         loc.setEquipmentRental(dto.isEquipmentRental());
-        // ────────────────────────────────────────────────
+
+        // lista de imagini rămâne goală la creare
+        // loc.getImagePaths() e deja inițializată cu ArrayList în entity
 
         loc.setOwner(owner);
-        // createdAt/updatedAt le gestionează @CreationTimestamp/@UpdateTimestamp
-
         FishingLocation saved = repo.save(loc);
         return mapToResponse(saved);
     }
 
-    public java.util.List<FishingLocationResponseDTO> getAllLocations() {
+    public List<FishingLocationResponseDTO> getAllLocations() {
         return repo.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -92,26 +97,50 @@ public class FishingLocationService {
         loc.setRules(dto.getRules());
         loc.setPricePerPerson(dto.getPricePerPerson());
 
-        // ─────────── Maparea câmpurilor noi ───────────
-        loc.setLocalizations(
-                dto.getLocalizations().stream()
-                        .map(d -> {
-                            Localization l = new Localization();
-                            l.setCity(d.getCity());
-                            l.setDistanceKm(d.getDistanceKm());
-                            l.setDuration(d.getDuration());
-                            return l;
-                        })
-                        .collect(Collectors.toList())
+        // remapăm noile câmpuri
+        loc.setLocalizations(dto.getLocalizations().stream()
+                .map(d -> {
+                    Localization l = new Localization();
+                    l.setCity(d.getCity());
+                    l.setDistanceKm(d.getDistanceKm());
+                    l.setDuration(d.getDuration());
+                    return l;
+                })
+                .collect(Collectors.toList())
         );
         loc.setFacilities(dto.getFacilities());
         loc.setSpecies(dto.getSpecies());
         loc.setNumberOfStands(dto.getNumberOfStands());
         loc.setEquipmentRental(dto.isEquipmentRental());
-        // ────────────────────────────────────────────────
 
-        // updatedAt e gestionat de @UpdateTimestamp
-        return mapToResponse(loc);
+        FishingLocation saved = repo.save(loc);
+        return mapToResponse(saved);
+    }
+
+    /**
+     * Încarcă una sau mai multe imagini pentru o locație existentă.
+     */
+    @Transactional
+    public FishingLocationResponseDTO uploadImages(Long id,
+                                                   Authentication auth,
+                                                   List<MultipartFile> files) {
+        FishingLocation loc = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Locație negăsită"));
+
+        if (!loc.getOwner().getUsername().equals(auth.getName())) {
+            throw new FishingLocationValidationException("Nu aveți drept de modificare a imaginilor");
+        }
+
+        // pentru fiecare fișier, salvează-l și colectează calea
+        List<String> paths = files.stream()
+                .map(file -> fileStorage.storeFile("loc_" + id, file))
+                .collect(Collectors.toList());
+
+        // adaugă noile path-uri în lista existentă
+        loc.getImagePaths().addAll(paths);
+
+        FishingLocation saved = repo.save(loc);
+        return mapToResponse(saved);
     }
 
     public void deleteLocation(Long id, Authentication auth) {
@@ -137,7 +166,8 @@ public class FishingLocationService {
                 loc.getOwner().getId(),
                 loc.getCreatedAt(),
                 loc.getUpdatedAt(),
-                // mapăm colecțiile pentru răspuns
+                // nou: lista de imagini
+                loc.getImagePaths(),
                 loc.getLocalizations().stream()
                         .map(l -> new LocalizationDTO(l.getCity(), l.getDistanceKm(), l.getDuration()))
                         .collect(Collectors.toList()),
