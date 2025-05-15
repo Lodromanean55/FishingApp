@@ -22,7 +22,7 @@ public class FishingLocation {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String address;
 
     @Column(columnDefinition = "TEXT")
