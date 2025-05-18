@@ -47,47 +47,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Activează CORS folosind configurația de mai jos
+                // CORS + CSRF
                 .cors(withDefaults())
-                // Dezactivează CSRF (stateless API)
                 .csrf(AbstractHttpConfigurer::disable)
-                // Nu folosim sesiuni
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                // Reguli de acces
+                // Regulile de acces:
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/uploads/**").permitAll()
-                        // Preflight CORS (OPTIONS) pentru toate endpoint-urile API
+
+                        // --- Permite anume GET-uri publice ---
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()                       // poze
+                        .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()               // listare și detaliu locații
+                        .requestMatchers(HttpMethod.GET, "/api/locations/*/reviews").permitAll()        // listare recenzii
+
+                        // --- Protejează POST/PUT/DELETE ---
+                        .requestMatchers(HttpMethod.POST,   "/api/auth/**").permitAll()                 // login/register
+                        .requestMatchers(HttpMethod.POST,   "/api/locations").authenticated()           // creare locație
+                        .requestMatchers(HttpMethod.PUT,    "/api/locations/**").authenticated()        // update locație
+                        .requestMatchers(HttpMethod.DELETE, "/api/locations/**").authenticated()        // ștergere locație
+                        .requestMatchers(HttpMethod.POST,   "/api/locations/*/reviews").authenticated() // adăugare review
+
+                        // Preflight CORS pentru orice endpoint API
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
 
-                        // Public: autentificare și înregistrare
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // Public: listare locații
-                        .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
-                        // Orice alt /api/** necesită autentificare
+                        // Orice altă cerere la /api/** necesită autentificare
                         .requestMatchers("/api/**").authenticated()
                 )
-                // Configurează UserDetailsService și JWT filter
                 .userDetailsService(userDetailsService)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * Configurație CORS pentru front-end-ul Angular
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of("http://localhost:4200"));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/api/**", cfg);
+        source.registerCorsConfiguration("/uploads/**", cfg);
         return source;
     }
 
