@@ -73,6 +73,10 @@ public class SecurityConfig {
 
                         // Orice altă cerere la /api/** necesită autentificare
                         .requestMatchers("/api/**").authenticated()
+                        .requestMatchers(HttpMethod.POST,   "/api/locations/*/reservations").authenticated()
+                        .requestMatchers(HttpMethod.GET,    "/api/reservations/me").authenticated()
+                        .requestMatchers(HttpMethod.GET,    "/api/locations/*/reservations").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/reservations/*").authenticated()
                 )
                 .userDetailsService(userDetailsService)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
