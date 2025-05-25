@@ -1,7 +1,8 @@
 // src/main/java/com/fishing/demo/controller/ReservationController.java
 package com.fishing.demo.controller;
 
-import com.fishing.demo.model.*;
+import com.fishing.demo.model.ReservationRequestDTO;
+import com.fishing.demo.model.ReservationResponseDTO;
 import com.fishing.demo.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,11 @@ public class ReservationController {
             Authentication auth
     ) {
         return svc.listReservationsForLocation(auth.getName(), locId);
+    }
+
+    @GetMapping("/reservations/owner")
+    public List<ReservationResponseDTO> ownerReservations(Authentication auth) {
+        return svc.listReservationsForOwner(auth.getName());
     }
 
     @DeleteMapping("/reservations/{resId}")

@@ -13,6 +13,7 @@ public class ReservationResponseDTO {
     private LocalDate date;
     private int persons;
     private Long locationId;
-    private String username;       // înlocuit userId cu username
+    private String locationName;   // numele locaţiei, nu doar ID
+    private String username;
     private LocalDateTime createdAt;
 }

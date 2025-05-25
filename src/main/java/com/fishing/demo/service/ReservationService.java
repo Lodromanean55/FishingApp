@@ -1,9 +1,13 @@
-// src/main/java/com/fishing/demo/service/ReservationService.java
 package com.fishing.demo.service;
 
 import com.fishing.demo.exceptions.ReservationValidationException;
-import com.fishing.demo.model.*;
-import com.fishing.demo.repository.*;
+import com.fishing.demo.model.Reservation;
+import com.fishing.demo.model.ReservationRequestDTO;
+import com.fishing.demo.model.ReservationResponseDTO;
+import com.fishing.demo.model.User;
+import com.fishing.demo.repository.FishingLocationRepository;
+import com.fishing.demo.repository.ReservationRepository;
+import com.fishing.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,8 +17,8 @@ import java.util.stream.Collectors;
 @Service
 public class ReservationService {
 
-    private final ReservationRepository    repo;
-    private final UserRepository           userRepo;
+    private final ReservationRepository     repo;
+    private final UserRepository            userRepo;
     private final FishingLocationRepository locRepo;
 
     public ReservationService(ReservationRepository repo,
@@ -36,7 +40,6 @@ public class ReservationService {
         var loc = locRepo.findById(locationId)
                 .orElseThrow(() -> new ReservationValidationException("Locație inexistentă"));
 
-        // ——— NOU: blocăm dublurile ———
         if (repo.existsByLocationIdAndDateAndUserId(locationId, dto.getDate(), user.getId())) {
             throw new ReservationValidationException(
                     "Ai deja o rezervare pentru locația \"" +
@@ -45,7 +48,6 @@ public class ReservationService {
             );
         }
 
-        // Verificăm capacitatea
         int already = repo.findAllByLocationIdAndDate(locationId, dto.getDate())
                 .stream()
                 .mapToInt(Reservation::getPersons)
@@ -68,6 +70,7 @@ public class ReservationService {
                 saved.getDate(),
                 saved.getPersons(),
                 saved.getLocation().getId(),
+                saved.getLocation().getName(),   // populăm numele
                 saved.getUser().getUsername(),
                 saved.getCreatedAt()
         );
@@ -84,6 +87,7 @@ public class ReservationService {
                         r.getDate(),
                         r.getPersons(),
                         r.getLocation().getId(),
+                        r.getLocation().getName(),   // şi aici
                         r.getUser().getUsername(),
                         r.getCreatedAt()
                 ))
@@ -104,10 +108,17 @@ public class ReservationService {
                         r.getDate(),
                         r.getPersons(),
                         r.getLocation().getId(),
+                        r.getLocation().getName(),   // şi aici
                         r.getUser().getUsername(),
                         r.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public List<ReservationResponseDTO> listReservationsForOwner(String username) {
+        userRepo.findByUsername(username)
+                .orElseThrow(() -> new ReservationValidationException("User inexistent"));
+        return repo.findAllByOwnerUsername(username);
     }
 
     @Transactional
