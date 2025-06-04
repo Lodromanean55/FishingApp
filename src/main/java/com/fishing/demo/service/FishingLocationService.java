@@ -165,6 +165,7 @@ public class FishingLocationService {
                 loc.getRules(),
                 loc.getPricePerPerson(),
                 loc.getOwner().getId(),
+                loc.getOwner().getUsername(),   // <<— adăugat pentru noul câmp
                 loc.getCreatedAt(),
                 loc.getUpdatedAt(),
                 loc.getImagePaths(),

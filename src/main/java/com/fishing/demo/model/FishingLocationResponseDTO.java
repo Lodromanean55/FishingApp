@@ -19,11 +19,13 @@ public class FishingLocationResponseDTO {
     private int maxPersons;
     private String rules;
     private BigDecimal pricePerPerson;
+
     private Long ownerId;
+    private String ownerUsername;    // <<— adăugat
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // --- noile câmpuri ---
     /** căile relative către imaginile încărcate */
     private List<String> imagePaths;
 
@@ -32,4 +34,7 @@ public class FishingLocationResponseDTO {
     private List<String> species;
     private int numberOfStands;
     private boolean equipmentRental;
+
+    // Lombok @AllArgsConstructor generează acum un constructor cu TOȚI acești parametri, în ordinea declarată mai sus.
+
 }
